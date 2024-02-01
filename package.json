@@ -1,0 +1,8 @@
+{
+  "type":"module",
+  "dependencies": {
+    "express": "^4.18.2",
+    "pkce-challenge": "^4.1.0",
+    "request": "^2.88.2"
+  }
+}
