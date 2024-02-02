@@ -53,7 +53,15 @@ def make_anime_info_table():
                         PRIMARY KEY (id)
                     );
                     ''')
-    
+    cur.executescript('''
+                    DROP TABLE IF EXISTS anime_synopsis;
+                    CREATE TABLE anime_synopsis(
+                        id int,
+                        synopsis string,
+                        PRIMARY KEY(id)
+                    );
+                    ''')
+
     cur.executescript('''
                     DROP TABLE IF EXISTS related_anime;
                     CREATE TABLE related_anime(
@@ -73,18 +81,11 @@ def make_anime_info_table():
                         PRIMARY KEY(original_id)
                     );
                     ''')
-    cur.executescript('''
-                    DROP TABLE IF EXISTS anime_synopsis;
-                    CREATE TABLE anime_synopsis(
-                        id int,
-                        synopsis string,
-                        PRIMARY KEY(id)
-                    );
-                    ''')
     
     cur.executescript('''
-                    DROP TABLE IF EXISTS anime_genre;
-                    CREATE TABLE genre_info(
+                    DROP TABLE IF EXISTS anime_genres;
+                    DROP TABLE IF EXISTS genre_info;
+                    CREATE TABLE anime_genres(
                         id int,
                         genre_id int,
                         PRIMARY KEY (id)
@@ -143,12 +144,11 @@ def make_lookup_tables():
         cur.executemany('''
                     INSERT INTO genre_lut (genre_id,genre_name) VALUES(?,?)''',
                     [[1,'Action'],[2,'Adventure'],[5,'Avant Garde'],[46,'Award Winning'],[28,'Boys Love'],[4,'Comedy'],[8,'Drama'],
-                     [10,'Fantasy'],[26,'Girls Love'],[47,'Gourmet'],[14,'Horror'],[7,'Mystery'],[22,'Romance'],[24,'Sci-fi'],
-                     [30,'Sports'],[36,'Slice of Life'][37,'Supernatural'],[41,'Suspense'],[9,'Ecchi'],[49,'Erotica'],[12,'Hentai'],[50,'Adult Cast'],
-                     [51,'Antropomorphic'],[52,'CGDCT'],[53,'Childcare'],[54,'Combat Sports'],[55,'Delinquents'],[39,'Detective'],[56,'Educational'],[57,'Gag Humor'],[58,'Gore'],
-                     [35,'Harem'],[59,'High Stakes Game'],[13,'Historical'],[60,'Idols (Female)'],[61,'Idols (Male)'],[62,'Isekai'],[63,'Iyashikei'],[64,'Love Polygon'],
-                     [65,'Magical Sex Shift'],[66,'Mahou Shoujo'],[17, 'Martial Arts'],[18,'Mecha'],[67,'Medical'],[38,'Military'],[19,'Music'],[6,'Mythology'],
-                     ])
+                    [10,'Fantasy'],[26,'Girls Love'],[47,'Gourmet'],[14,'Horror'],[7,'Mystery'],[22,'Romance'],[24,'Sci-fi'],
+                    [30,'Sports'],[36,'Slice of Life'],[37,'Supernatural'],[41,'Suspense'],[9,'Ecchi'],[49,'Erotica'],[12,'Hentai'],[50,'Adult Cast'],
+                    [51,'Antropomorphic'],[52,'CGDCT'],[53,'Childcare'],[54,'Combat Sports'],[55,'Delinquents'],[39,'Detective'],[56,'Educational'],[57,'Gag Humor'],[58,'Gore'],
+                    [35,'Harem'],[59,'High Stakes Game'],[13,'Historical'],[60,'Idols (Female)'],[61,'Idols (Male)'],[62,'Isekai'],[63,'Iyashikei'],[64,'Love Polygon'],
+                    [65,'Magical Sex Shift'],[66,'Mahou Shoujo'],[17, 'Martial Arts'],[18,'Mecha'],[67,'Medical'],[38,'Military'],[19,'Music'],[6,'Mythology']])
         #['unknown', 'tv', 'ova', 'movie', 'special', 'ona', 'music']
         #list_name.index('unknown')
     except:
@@ -191,6 +191,6 @@ def make_lookup_tables():
         pass
     con.commit()
 
-make_info_queue()
-make_lookup_tables()
+# make_info_queue()
+# make_lookup_tables()
 make_anime_info_table()
