@@ -1,0 +1,5 @@
+{
+    "relation_lut":["other","character"],
+    "source_lut":["web_novel","mixed_media"],
+    "media_lut":["tv_special"]
+}

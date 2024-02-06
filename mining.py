@@ -44,30 +44,37 @@ def test_anime_ranking():
 @timeit
 def get_in_depth_info_for_each_anime():
     #just good mining
+    empty_json_count = 0
+    complete_json_count = 0
     time_out = 0.01
-    relation_lut = ['sequel', 'prequel', 'alternative_setting', 'alternative_version', 'side_story', 'parent_story', 'summary', 'full_story']
-    source_lut = ['other', 'original', 'manga', '4_koma_manga', 'web_manga', 'digital_manga', 'novel', 'light_novel', 'visual_novel', 'game', 'card_game', 'book', 'picture_book', 'radio', 'music']
+    relation_lut = ['sequel', 'prequel', 'alternative_setting', 'alternative_version', 'side_story', 'parent_story', 'summary', 'full_story','spin_off','other','character']
+    source_lut = ['other', 'original', 'manga', '4_koma_manga', 'web_manga', 'digital_manga', 'novel', 'light_novel', 'visual_novel', 'game', 'card_game', 'book', 'picture_book', 'radio', 'music','web_novel','mixed_media']
     rating_lut = ['g', 'pg', 'pg_13', 'r', 'r+', 'Hentai']
     status_lut = ['finished_airing', 'currently_airing', 'not_yet_aired']
-    media_lut = ['unknown', 'tv', 'ova', 'movie', 'special', 'ona', 'music']
+    media_lut = ['unknown', 'tv', 'ova', 'movie', 'special', 'ona', 'music','tv_special']
     season_lut = ['winter', 'spring','summer','fall']
     genre_lut = ['404','Action', 'Adventure', 'Racing', 'Comedy', 'Avant', 'Mythology', 'Mystery', 'Drama', 'Ecchi', 'Fantasy', 'Strategy', 'Hentai', 'Historical', 'Horror', 'Kids', '404', 'Martial', 'Mecha', 'Music', 'Parody', 'Samurai', 'Romance', 'School', 'Sci-Fi', 'Shoujo', 'Girls', 'Shounen', 'Boys', 'Space', 'Sports', 'Super', 'Vampire', '404', '404', 'Harem', 'Slice', 'Supernatural', 'Military', 'Detective', 'Psychological', 'Suspense', 'Seinen', 'Josei', '404', '404', 'Award', 'Gourmet', 'Workplace', 'Erotica', 'Adult', 'Anthropomorphic', 'CGDCT', 'Childcare', 'Combat', 'Delinquents', 'Educational', 'Gag', 'Gore', 'High', 'Idols', 'Idols', 'Isekai', 'Iyashikei', 'Love', 'Magical', 'Mahou', 'Medical', 'Organized', 'Otaku', 'Performing', 'Pets', 'Reincarnation', 'Reverse', 'Romantic', 'Showbiz', 'Survival', 'Team', 'Time', 'Video', 'Visual', 'Crossdressing']
     latencies = []
-    num_of_anime = cur.execute('SELECT COUNT(*) FROM id_queue').fetchone()[0]
-    cur.execute('''
-                CREATE TABLE IF NOT EXISTS id_queue_backup AS
-                SELECT * FROM id_queue;''')
-    con.commit()
+    num_of_anime = cur.execute('SELECT COUNT(*) FROM id_queue WHERE status = "waiting"').fetchone()[0]
+    # cur.execute('''
+    #             CREATE TABLE IF NOT EXISTS id_queue_backup AS
+    #             SELECT * FROM id_queue;''')
+    # con.commit()
     print("num of anime: ", num_of_anime)
     print('anime name: ', )
     for i in range(0, num_of_anime, 1):
-        anime_q_tmp_val = cur.execute('SELECT id, title FROM id_queue').fetchone()
+        anime_q_tmp_val = cur.execute("SELECT id, title FROM id_queue WHERE status = 'waiting' LIMIT 1").fetchone()
+        if len(anime_q_tmp_val) == 0:
+            print('this  is empty: ', anime_q_tmp_val,'\nso we\'re breaking the loop')
+            break
         ###########
         # Console #
         ###########
         print(12*'-')
+        print('anime q tmp val:', anime_q_tmp_val)
         print("getting anime ", i,"/",num_of_anime)
         print('anime name: ', anime_q_tmp_val[1])
+        print('anime id: ', anime_q_tmp_val[0])
         ###########
         # Request #
         ###########
@@ -84,45 +91,67 @@ def get_in_depth_info_for_each_anime():
                 print(f'server is down, wait {time_out}s')
                 time.sleep(time_out)
             elif status_code > 400 and status_code < 410 :
-                print(res.url)
+                # print(res.url)
+                print('status code: ', status_code)
                 raise Exception('you messed up somewhere on the request')
             elif status_code == 200:
+                # print(res.url)
+                ################################
+                # remove the exponential delay #
+                ################################
                 if time_out > 100:
                     time_out = 10
                 time_out /= 10
-                break
+                
+                ################
+                # MAKE JSON  #
+                ################
+                try:
+                    anime = res.json()
+                except:
+                    print('something can\'t be serialized in this text: ', res.text)
+                #################
+                if anime['id'] == 0:
+                    print('anime id: ', anime['id'])
+                    print('getting the id 0 error, trying again')
+                elif len(anime) != 0:
+                    complete_json_count += 1
+                    break
+                else:
+                    print('the json is empty, trying again')
+                    print(res)
+                    empty_json_count += 1
+                    print(f'json accuracy: {complete_json_count}/{complete_json_count+empty_json_count}')
         latencies.append((end_time -start_time)*1000)
-
-        ################
-        # MAKE INSERT  #
-        ################
         try:
-            anime = res.json()
-        except:
-            print('something can\'t be serialized in this text: ', res.text)
-
-        anime_info = [anime['id'],anime['title'],anime['start_date'],anime['end_date'],anime['mean'],anime['popularity'],
-                    anime['num_list_users'],anime['num_scoring_users'],anime['statistics']['status']['watching'],
-                    anime['statistics']['status']['completed'],anime['statistics']['status']['on_hold'],anime['statistics']['status']['dropped'],
-                    anime['statistics']['status']['plan_to_watch'],False if anime['nsfw'] == 'white' else True,anime['created_at'],
-                    anime['updated_at'],media_lut.index(anime['media_type']),status_lut.index(anime['status_type']),anime['num_episodes'],
-                    season_lut.index(anime['start season']['season']),anime['start season']['year'],source_lut.index(anime['source']),anime['average_episode_duration'],
-                    rating_lut.index(anime['rating'])]
+            anime_info = [anime['id'],anime['title'],anime['start_date'],anime['end_date'] if 'end_date' in anime else 'NA',anime['mean'],anime['rank'],anime['popularity'],
+                        anime['num_list_users'],anime['num_scoring_users'],anime['statistics']['status']['watching'],
+                        anime['statistics']['status']['completed'],anime['statistics']['status']['on_hold'],anime['statistics']['status']['dropped'],
+                        anime['statistics']['status']['plan_to_watch'],False if anime['nsfw'] == 'white' else True,anime['created_at'],
+                        anime['updated_at'],media_lut.index(anime['media_type']),status_lut.index(anime['status']),anime['num_episodes'],
+                        season_lut.index(anime['start_season']['season']) if 'start_season' in anime else 'NA',anime['start_season']['year'] if 'start_season' in anime else 'NA',source_lut.index(anime['source']) if 'source' in anime else 'NA',anime['average_episode_duration'],
+                        rating_lut.index(anime['rating']) if 'rating' in anime else 'NA']
+        except Exception as err:
+            pprint(anime)
+            raise err
         print('anime info: ', anime_info)
         related_anime =[]
         for single_related_anime in anime['related_anime']:
-            related_anime.append([anime['id'],single_related_anime['node']['id'],relation_lut.index(single_related_anime['node']['relation_type'])])
+            related_anime.append([anime['id'],single_related_anime['node']['id'],relation_lut.index(single_related_anime['relation_type'])])
 
         recommended_anime =[]
         for single_recomended_anime in anime['recommendations']:
-            recommended_anime.append([anime['id'],single_related_anime['node']['id'],single_recomended_anime['node']['num_recommendations']])
+            # print('single rec\'d anime: ', single_recomended_anime)
+            recommended_anime.append([anime['id'],single_recomended_anime['node']['id'],single_recomended_anime['num_recommendations']])
 
-        anime_genres =[]
-        for genre in anime['genres']:
-            anime_genres.append([anime['id'],genre['id']])
-        anime_studios =[]
-        for studio in anime['studios']:
-            anime_studios.append([anime['id'],studio['id']])
+        if 'genres' in anime:
+            anime_genres =[]
+            for genre in anime['genres']:
+                anime_genres.append([anime['id'],genre['id']])
+        if 'studios' in anime:
+            anime_studios =[]
+            for studio in anime['studios']:
+                anime_studios.append([anime['id'],studio['id']])
 
         ###########
         # INSERT  #
@@ -139,7 +168,7 @@ def get_in_depth_info_for_each_anime():
                         ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
                     );
                     ''',anime_info)
-        
+
         cur.execute('''
                         INSERT INTO anime_synopsis
                         (id, synopsis)
@@ -166,8 +195,11 @@ def get_in_depth_info_for_each_anime():
         # except:
         #     pprint(res.json())
         #     raise Exception("The json that commited the crime")
+        cur.execute('''UPDATE id_queue
+                    SET status = 'done'
+                    WHERE id = ?
+                    ''',[anime_q_tmp_val[0]])
         con.commit()
-        break
     return latencies
 
 

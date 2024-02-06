@@ -11,6 +11,7 @@ def make_info_queue():
                     id int UNIQUE,
                     title string,
                     ranking int,
+                    status string,
                     PRIMARY KEY (id)
                 );
                 ''')
@@ -28,7 +29,7 @@ def make_anime_info_table():
                         id int UNIQUE,
                         title string,
                         start_date string,
-                        end_date string,
+                        end_date,
                         mean float,
                         rank int,
                         popularity int,
@@ -57,7 +58,7 @@ def make_anime_info_table():
                     DROP TABLE IF EXISTS anime_synopsis;
                     CREATE TABLE anime_synopsis(
                         id int,
-                        synopsis string,
+                        synopsis VARCHAR(1024),
                         PRIMARY KEY(id)
                     );
                     ''')
@@ -67,8 +68,7 @@ def make_anime_info_table():
                     CREATE TABLE related_anime(
                         original_id int,
                         related_id int,
-                        related_type_id int,
-                        PRIMARY KEY(original_id)
+                        related_type_id int
                     );
                     ''')
 
@@ -77,8 +77,7 @@ def make_anime_info_table():
                     CREATE TABLE recommended_anime(
                         original_id int,
                         recommended_id int,
-                        num_recommendations int,
-                        PRIMARY KEY(original_id)
+                        num_recommendations int
                     );
                     ''')
     
@@ -87,16 +86,14 @@ def make_anime_info_table():
                     DROP TABLE IF EXISTS genre_info;
                     CREATE TABLE anime_genres(
                         id int,
-                        genre_id int,
-                        PRIMARY KEY (id)
+                        genre_id int
                     );
                     ''')
     cur.executescript('''
                     DROP TABLE IF EXISTS anime_studios;
                     CREATE TABLE anime_studios(
                         id int,
-                        studio_id int,
-                        PRIMARY KEY (id)
+                        studio_id int
                     );
                     ''')
     con.commit()
@@ -106,37 +103,43 @@ def make_lookup_tables():
                 DROP TABLE IF EXISTS genre_lut;
                 CREATE TABLE genre_lut(
                     genre_id int UNIQUE,
-                    genre_name string,
+                    genre_name VARCHAR(64),
                     PRIMARY KEY (genre_id)
                 );
+                DROP TABLE IF EXISTS studio_lut;
                 CREATE TABLE IF NOT EXISTS studio_lut(
                     studio_id int UNIQUE,
-                    studio_name string UNIQUE,
+                    studio_name VARCHAR(64),
                     PRIMARY KEY (studio_id)
                 );
+                DROP TABLE IF EXISTS media_lut;
                 CREATE TABLE IF NOT EXISTS media_lut(
                     media_id int UNIQUE,
-                    media_name string UNIQUE,
+                    media_name VARCHAR(64) UNIQUE,
                     PRIMARY KEY (media_id)
                 );
+                DROP TABLE IF EXISTS status_lut;
                 CREATE TABLE IF NOT EXISTS status_lut(
                     status_id int UNIQUE,
-                    status_name string,
+                    status_name VARCHAR(64),
                     PRIMARY KEY (status_id)
                 );
+                DROP TABLE IF EXISTS rating_lut;
                 CREATE TABLE IF NOT EXISTS rating_lut(
                     rating_id int UNIQUE,
-                    rating_name string,
+                    rating_name VARCHAR(64),
                     PRIMARY KEY (rating_id)
                 );
+                DROP TABLE IF EXISTS source_lut;
                 CREATE TABLE IF NOT EXISTS source_lut(
                     source_id int UNIQUE,
-                    source_name string,
+                    source_name VARCHAR(64),
                     PRIMARY KEY (source_id)
                 );
+                DROP TABLE IF EXISTS relation_lut;
                 CREATE TABLE IF NOT EXISTS relation_lut(
                     related_type_id int UNIQUE,
-                    relation_name string,
+                    relation_name VARCHAR(64),
                     PRIMARY KEY (related_type_id)
                 );
                 ''')
@@ -185,7 +188,7 @@ def make_lookup_tables():
     try:
         cur.executemany('''
                     INSERT INTO relation_lut (related_type_id,relation_name) VALUES(?,?)''',
-                    [[0, 'sequel'], [1, 'prequel'], [2, 'alternative_setting'], [3, 'alternative_version'], [4, 'side_story'], [5, 'parent_story'], [6, 'summary'], [7, 'full_story']])
+                    [[0, 'sequel'], [1, 'prequel'], [2, 'alternative_setting'], [3, 'alternative_version'], [4, 'side_story'], [5, 'parent_story'], [6, 'summary'], [7, 'full_story'],[8,'other']])
         #['sequel', 'prequel', 'alternative_setting', 'alternative_version', 'side_story', 'parent_story', 'summary', 'full_story']
     except:
         pass
