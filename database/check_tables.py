@@ -10,11 +10,22 @@ cur = con.cursor()
 
 def check_something_in_the_tables():
     print(cur.execute('SELECT DISTINCT status FROM id_queue').fetchall())
-    print(cur.execute('SELECT count(status) FROM id_queue WHERE status ="done"').fetchall())
-    print(cur.execute('SELECT count(status) FROM id_queue WHERE status = "waiting"').fetchall())
-    print(cur.execute('SELECT COUNT(*) FROM anime_info').fetchall())
+    print('all id_queue rows: ',cur.execute('SELECT count(status) FROM id_queue').fetchone())
+    print(cur.execute('SELECT count(status) FROM id_queue WHERE status ="done"').fetchone())
+    print(cur.execute('SELECT count(status) FROM id_queue WHERE status = "waiting"').fetchone())
+    print(cur.execute('SELECT ROWID FROM id_queue WHERE title ="Wo Shi Da Xiongmao"').fetchone())
+    print(cur.execute('SELECT ROWID FROM id_queue WHERE title ="Wo Shi Faming Jia"').fetchone())
+    print(cur.execute('SELECT ROWID FROM id_queue WHERE title ="Wo Shi Lang: Huolong Shanda Maoxian"').fetchone())
+    print(cur.execute('SELECT * FROM id_queue ORDER BY ROWID LIMIT 5').fetchall())
     con.commit()
     # con.close()
+
+def reupdate_id_queue_rows():
+    cur.execute('''UPDATE id_queue
+                SET status = 'done'
+                WHERE ROWID <= 14091
+                ''')
+    con.commit()
 
 def reset_iq_queue():
     cur.execute('UPDATE id_queue SET status = "waiting" WHERE 1=1')
@@ -39,5 +50,6 @@ def check_nsfw_diffs():
     print(cur.execute('SELECT MIN(ranking),MAX(ranking) FROM id_queue').fetchone())
     # con.close()
 
-reset_iq_queue()
+# reset_iq_queue()
+reupdate_id_queue_rows()
 check_something_in_the_tables()
