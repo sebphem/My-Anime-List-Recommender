@@ -3,3 +3,5 @@ mal_token.json
 junkyard
 progress_reports
 batabase/*.db
+__pycache__
+env
